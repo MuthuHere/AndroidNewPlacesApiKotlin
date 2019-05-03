@@ -38,5 +38,7 @@ dependencies {
     implementation 'com.github.mancj:MaterialSearchBar:0.8.2'
 
     implementation 'com.google.android.gms:play-services-location:16.0.0'
+    implementation 'com.skyfishjy.ripplebackground:library:1.0.1'
+
 
 }

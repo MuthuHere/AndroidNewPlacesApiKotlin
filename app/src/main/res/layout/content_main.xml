@@ -16,19 +16,31 @@
             android:layout_height="match_parent"
             android:name="com.google.android.gms.maps.SupportMapFragment"/>
 
-    <ImageView
-            android:id="@+id/ivMarker"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_centerInParent="true"
-            android:translationY="-24dp"
-            android:src="@drawable/ic_marker"/>
+
+    <com.skyfishjy.library.RippleBackground
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:id="@+id/rippleBg"
+            app:rb_color="#0099CC"
+            app:rb_radius="32dp"
+            app:rb_rippleAmount="4"
+            app:rb_duration="3000"
+            app:rb_scale="6">
+        <ImageView
+                android:id="@+id/ivMarker"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:translationY="-24dp"
+                android:src="@drawable/ic_marker"/>
+
+    </com.skyfishjy.library.RippleBackground>
 
 
     <com.mancj.materialsearchbar.MaterialSearchBar
             style="@style/MaterialSearchBarLight"
             app:mt_speechMode="false"
-            app:mt_hint="Custom hint"
+            app:mt_hint="Search here"
             android:layout_margin="16dp"
             app:mt_maxSuggestionsCount="10"
             app:mt_navIconEnabled="true"
@@ -45,7 +57,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
-            android:text="Find Restaurant"
+            android:text="Find Near"
             android:textAllCaps="false"
             android:textColor="#FFF"
             android:background="@color/colorPrimary"/>

@@ -1,4 +1,7 @@
 <resources>
     <string name="app_name">MapPlacesApplication</string>
     <string name="action_settings">Settings</string>
+
+
+    <string name="api_key">YOUR_API_KEY</string>
 </resources>
