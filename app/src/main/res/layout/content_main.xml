@@ -60,6 +60,7 @@
             android:text="Find Near"
             android:textAllCaps="false"
             android:textColor="#FFF"
+            android:visibility="gone"
             android:background="@color/colorPrimary"/>
 
 </RelativeLayout>

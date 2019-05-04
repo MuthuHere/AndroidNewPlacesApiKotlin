@@ -4,12 +4,16 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Context
 import android.content.Intent
+import android.location.Address
+import android.location.Geocoder
 import android.location.Location
 import android.os.Bundle
 import android.os.Handler
+import android.support.design.widget.BottomSheetBehavior
 import android.support.v7.app.AppCompatActivity
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.util.Log.d
 import android.view.View
 import android.view.inputmethod.InputMethodManager
@@ -24,7 +28,6 @@ import com.google.android.gms.maps.SupportMapFragment
 import com.google.android.gms.maps.model.LatLng
 import com.google.android.gms.tasks.OnFailureListener
 import com.google.android.gms.tasks.OnSuccessListener
-import com.google.android.gms.tasks.Task
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.AutocompletePrediction
 import com.google.android.libraries.places.api.model.AutocompleteSessionToken
@@ -33,12 +36,18 @@ import com.google.android.libraries.places.api.model.TypeFilter
 import com.google.android.libraries.places.api.net.*
 import com.mancj.materialsearchbar.MaterialSearchBar
 import com.mancj.materialsearchbar.adapter.SuggestionsAdapter
+import kotlinx.android.synthetic.main.bottom_sheet.*
 import kotlinx.android.synthetic.main.content_main.*
 import java.lang.Exception
 import java.util.*
 import kotlin.properties.Delegates
 
-class MainActivity : AppCompatActivity(), OnMapReadyCallback {
+class MainActivity : AppCompatActivity(), OnMapReadyCallback,GoogleMap.OnCameraMoveListener {
+
+    override fun onCameraMove() {
+        d("mmmm ","moving camera")
+
+    }
 
 
     var mMap: GoogleMap by Delegates.notNull()
@@ -54,7 +63,7 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
     val ACTIVITY_REQUEST = 23
 
     var fusedLocationProviderClient: FusedLocationProviderClient by Delegates.notNull()
-
+    var sheetBehavior: BottomSheetBehavior<View> by Delegates.notNull()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -101,17 +110,67 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
         btnFind.setOnClickListener {
             val currentMarker = mMap.cameraPosition.target
             rippleBg.startRippleAnimation()
-            Handler().postDelayed(object :Runnable{
+            Handler().postDelayed(object : Runnable {
                 override fun run() {
                     rippleBg.stopRippleAnimation()
 
                 }
 
-            },3000)
+            }, 3000)
         }
 
 
+
+
+
+        //bottom sheet
+        sheetBehavior = BottomSheetBehavior.from(llBottomSheet)
+
+        sheetBehavior.setBottomSheetCallback(object : BottomSheetBehavior.BottomSheetCallback() {
+            override fun onSlide(p0: View, p1: Float) {
+
+
+            }
+
+            override fun onStateChanged(bottomSheet: View, newState: Int) {
+                when (newState) {
+                    BottomSheetBehavior.STATE_HIDDEN -> {
+                        sheetBehavior.state = BottomSheetBehavior.STATE_COLLAPSED
+                    }
+                    BottomSheetBehavior.STATE_EXPANDED -> {
+
+                    }
+                    BottomSheetBehavior.STATE_COLLAPSED -> {
+
+                    }
+                    BottomSheetBehavior.STATE_DRAGGING -> {
+                    }
+                    BottomSheetBehavior.STATE_SETTLING -> {
+                    }
+                }
+            }
+
+        })
+
     }
+
+
+    /**
+     * Map movement
+     */
+
+
+
+   /*private final OnCameraChangeListener mOnCameraChangeListener =
+        new OnCameraChangeListener() {
+
+    @Override
+    public void onCameraChange(CameraPosition cameraPosition) {
+        if (!mMapIsTouched) {
+            refreshClustering(false);
+        }
+    }
+};*/
 
 
     private fun searchChangeListener(token: AutocompleteSessionToken) {
@@ -175,13 +234,13 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                             val suggsion = searchBar.lastSuggestions[position].toString()
                             searchBar.text = suggsion
 
-                            Handler().postDelayed(object :Runnable{
+                            Handler().postDelayed(object : Runnable {
                                 override fun run() {
 
                                     searchBar.clearSuggestions()
                                 }
 
-                            },1000)
+                            }, 1000)
 
 
                             closeKeyBoard()
@@ -194,9 +253,18 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                                 .addOnSuccessListener(object : OnSuccessListener<FetchPlaceResponse> {
                                     override fun onSuccess(response: FetchPlaceResponse?) {
                                         val place = response?.place
-                                        if (place !=null){
+                                        if (place != null) {
                                             val latLng = place.latLng
-                                            if (latLng!=null){
+                                            if (latLng != null) {
+                                                //get address
+                                                getAddress(
+                                                    LatLng(
+                                                        latLng.latitude,
+                                                        latLng.longitude
+                                                    )
+                                                )
+
+
                                                 mMap.moveCamera(
                                                     CameraUpdateFactory.newLatLngZoom(
                                                         LatLng(
@@ -238,10 +306,10 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
 
     private fun closeKeyBoard() {
 
-        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        if (imm != null) {
-            imm.hideSoftInputFromWindow(searchBar.windowToken, InputMethodManager.HIDE_IMPLICIT_ONLY)
-        }
+        (getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager)?.hideSoftInputFromWindow(
+            searchBar.windowToken,
+            InputMethodManager.HIDE_IMPLICIT_ONLY
+        )
 
     }
 
@@ -316,6 +384,15 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                                 ), ZOOM_LEVEL
                             )
                         )
+
+                        //get address
+                        getAddress(
+                            LatLng(
+                                lastKnownLocation.latitude,
+                                lastKnownLocation.longitude
+                            )
+                        )
+
                     } else {
                         requestLocationUpdate()
                     }
@@ -353,6 +430,13 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
                     )
                 )
 
+                //get address
+                getAddress(
+                    LatLng(
+                        lastKnownLocation.latitude,
+                        lastKnownLocation.longitude
+                    )
+                )
 
                 fusedLocationProviderClient.requestLocationUpdates(locationRequest, locationCallback, null)
 
@@ -360,6 +444,63 @@ class MainActivity : AppCompatActivity(), OnMapReadyCallback {
             }
 
         }
+    }
+
+
+    private fun getAddress(latLng: LatLng): String {
+
+        var fullAddress = ""
+
+        val geoCoder = Geocoder(this@MainActivity, Locale.getDefault())
+        val addressList = geoCoder.getFromLocation(latLng.latitude, latLng.longitude, 1)
+        if (addressList != null) {
+            val googleAddress = addressList[0] as Address
+            fullAddress = googleAddress.getAddressLine(0)
+        }
+
+        val location = addressList[0].locality
+        val zipCode = addressList[0].postalCode
+        val country = addressList[0].countryName
+
+        d("mmm ", "location =$location <====> zipCode = $zipCode <===> country$country")
+
+        d("mmm ", "fullAddress =$fullAddress")
+
+
+        val splittedAddress = fullAddress.split(",")
+
+        when {
+            splittedAddress.size > 4 -> {
+                tvAddressOne.text = splittedAddress[0]
+                tvAddressTwo.text = splittedAddress[1]
+                tvAddressThree.text = splittedAddress[2]
+                tvAddressFour.text = splittedAddress[3]
+            }
+            splittedAddress.size > 5 -> {
+                tvAddressOne.text = splittedAddress[0] + " , " + splittedAddress[1]
+                tvAddressTwo.text = splittedAddress[2]
+                tvAddressThree.text = splittedAddress[3]
+                tvAddressFour.text = splittedAddress[4]
+            }
+            splittedAddress.size > 6 -> {
+                tvAddressOne.text = splittedAddress[0] + " , " + splittedAddress[1]
+                tvAddressTwo.text = splittedAddress[2] + "," + splittedAddress[3]
+                tvAddressThree.text = splittedAddress[4]
+                tvAddressFour.text = splittedAddress[5]
+            }
+            splittedAddress.size > 7 -> {
+                tvAddressOne.text = splittedAddress[0] + " , " + splittedAddress[1]+" , " + splittedAddress[2]
+                tvAddressTwo.text = splittedAddress[3]+" , "+ splittedAddress[4]
+                tvAddressThree.text = splittedAddress[5]
+                tvAddressFour.text = splittedAddress[6]
+            }
+        }
+
+
+
+
+
+        return fullAddress
     }
 
 }
